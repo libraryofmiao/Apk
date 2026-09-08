@@ -1,3 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Library Membership</string>
+    <string name="app_name">Library Membership System</string>
+    <string name="library_name">Sub Divisional Library Miao</string>
+
+    <!-- Login -->
+    <string name="welcome_admin">Welcome Administrator</string>
+    <string name="login_prompt">Please enter your credentials to continue.</string>
+    <string name="authenticate">Authenticate</string>
+    <string name="authenticating">Authenticating…</string>
+    <string name="invalid_pin">Invalid administrative passcode.</string>
+
+    <!-- Home -->
+    <string name="home_title">Welcome to Library Membership System</string>
+    <string name="home_subtitle">Online registration, membership card generation, renewal and management.</string>
+    <string name="register_now">Register Now</string>
+    <string name="members">Members</string>
+    <string name="feature_online_reg">Online Registration</string>
+    <string name="feature_online_reg_desc">Register library members digitally.</string>
+    <string name="feature_digital_card">Digital Membership Card</string>
+    <string name="feature_digital_card_desc">Auto-generated membership card with QR code.</string>
+    <string name="feature_easy_mgmt">Easy Management</string>
+    <string name="feature_easy_mgmt_desc">Search, renew and manage memberships.</string>
+    <string name="logout">Logout</string>
+
+    <!-- Dashboard -->
+    <string name="dashboard_title">Sub Divisional Library Miao - Dashboard</string>
+    <string name="total_members">Total Members</string>
+    <string name="search_hint">Search Name / Member ID / Mobile / Email</string>
+    <string name="export_excel">Export Excel</string>
+    <string name="print_members">Print Members</string>
+    <string name="monthly_report">Monthly Report</string>
+    <string name="no_members_found">No Members Found</string>
+
+    <!-- Register / Edit -->
+    <string name="register_title">Library Membership Registration Form</string>
+    <string name="edit_title">Edit Member</string>
+    <string name="form_note">Please fill all required details carefully.</string>
+    <string name="full_name">Full Name *</string>
+    <string name="guardian_name">Father\'s / Guardian\'s Name</string>
+    <string name="gender">Gender *</string>
+    <string name="dob">Date of Birth *</string>
+    <string name="occupation">Occupation</string>
+    <string name="address">Address *</string>
+    <string name="district">District</string>
+    <string name="state">State</string>
+    <string name="pincode">PIN Code</string>
+    <string name="mobile">Mobile Number *</string>
+    <string name="email">Email Address</string>
+    <string name="membership_type">Membership Type *</string>
+    <string name="membership_duration">Membership Duration</string>
+    <string name="id_type">ID Proof Type</string>
+    <string name="id_number">ID Proof Number</string>
+    <string name="photo_upload">Upload Passport Size Photograph</string>
+    <string name="photo_note">Photo is automatically resized and stored as WebP for faster loading.</string>
+    <string name="declaration">I hereby declare that the information provided above is true and correct.</string>
+    <string name="submit_registration">Submit Registration</string>
+    <string name="reset">Reset</string>
+    <string name="save_changes">Save Changes</string>
+    <string name="manage_options">Manage Options</string>
+    <string name="add_new_option">Add New Option</string>
+    <string name="add">Add</string>
+    <string name="cancel">Cancel</string>
+
+    <!-- Member card -->
+    <string name="digital_card_title">Digital Membership Card</string>
+    <string name="scan_verification">Scan Verification</string>
+    <string name="authorized_signatory">Authorized Signatory</string>
+    <string name="download_pdf_card">Download PDF Card</string>
+    <string name="print_card">Print Card</string>
+    <string name="verify_member">Verify Member</string>
+
+    <!-- Verify -->
+    <string name="member_verification">Member Verification</string>
+    <string name="verifying">Verifying Member…</string>
+    <string name="scan_qr">Scan QR Code</string>
+    <string name="enter_code_manually">Or enter verification code manually</string>
 </resources>

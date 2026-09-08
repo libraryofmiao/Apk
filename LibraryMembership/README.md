@@ -1,128 +1,111 @@
-# Library Membership — Android App
+# Library Membership System — Android App
 
-A Kotlin + Jetpack Compose Android app that talks directly to your
-`library-membership-system` Cloudflare Worker. It covers three roles in one app:
+A native Android (Kotlin + Jetpack Compose) rebuild of the **Sub Divisional Library Miao**
+membership system, reconstructed from everything discovered across the GitHub repo
+(`libraryofmiao/library-membership-system`), the deployed Cloudflare Worker, the Cloudflare
+Pages Function (`functions/api/login.js`), and the live pages at `library-membership-system.pages.dev`.
 
-- **Admin** — list/search all members, register new members, edit any field,
-  toggle Active/Inactive, delete a member.
-- **Staff (Verify)** — live camera QR scanning or manual code entry, calls
-  `/api/verify` and shows a clear ACTIVE / INACTIVE result with photo.
-- **Member (My Card)** — a member looks themselves up by Member ID and sees
-  their card with photo and a QR code (generated locally from their `verify`
-  code) to show staff.
+Nothing from the web app's flows was dropped — every screen, field, and action below maps
+1:1 to something confirmed live during the review, with the source noted.
 
-## 1. Backend URL — already set
+## Screens (1:1 with the live site)
 
-`app/src/main/java/com/library/membership/api/ApiClient.kt` is already
-pointed at:
+| App screen | Web equivalent | Notes |
+|---|---|---|
+| `LoginScreen` | `login.html` | 6-digit PIN → `POST /api/login` (Pages Function). Same single shared `SECRET_PIN` check confirmed in `functions/api/login.js`. |
+| `HomeScreen` | `index.html` | Welcome text, feature cards, Register/Members CTAs, Logout — copied verbatim from the fetched homepage. |
+| `DashboardScreen` | `dashboard.html` | Total count, search box, Export/Print/Monthly Report actions, member list with Card/Edit/Delete/Activate-Deactivate — matches the table columns and button labels exactly (`Photo, Member ID, Name, Mobile, Email, Membership, Card, Action, Status`). |
+| `RegisterScreen` (also handles edit) | `register.html` / `edit-member.html` | Every field from the live form: Full Name, Guardian, Gender, DOB, Occupation, Address, District, State, PIN Code, Mobile, Email, Membership Type, Membership Duration, ID Proof Type, ID Number, photo upload, declaration checkbox. Includes the **Manage Options** admin panel (`POST /api/options`, `X-Option-Admin-Key` header) exactly as found in `worker.js`. |
+| `MemberCardScreen` | `member-card.html` | Photo, Name, Member ID, Email, Membership, Issue Date, Status, QR ("Scan Verification"), Authorized Signatory line, Download PDF / Print / Verify Member actions. |
+| `VerifyScreen` | `verify.html` | Calls `GET /api/verify?verify=CODE`, shows only the minimal public fields (name, member ID, membership type, status, photo) — deliberately **not** the full record, per the security recommendation from the review. |
 
-```
-https://library-membership-system.libraryofmiao.workers.dev/
-```
+## Backend wiring
 
-No edits needed. If you ever redeploy the Worker to a different domain,
-update `BASE_URL` in that file (or call `ApiClient.configure("https://...")`
-at startup instead).
+- **Worker API** (`MembershipApi.kt`) — points at
+  `https://library-membership-system.libraryofmiao.workers.dev/api`, with every route read
+  directly from the deployed `worker.js`: `register`, `members`, `member`, `member-status`,
+  `verify`, `photo`, `options`.
+- **Login** (`AuthApi.kt`) — points at the **Pages** domain
+  (`https://library-membership-system.pages.dev`), calling `/api/login`, which is a separate
+  Cloudflare Pages Function (`functions/api/login.js`) from the standalone Worker — this
+  split is intentional and mirrors the real deployment, not a simplification.
+- **NocoDB / GitHub tokens** stay server-side only (inside the Worker/Functions), exactly as
+  in the web app — the app never talks to NocoDB or GitHub directly.
 
-## 2. Building an APK without a computer
+## What the app adds beyond the web version
 
-A GitHub Actions workflow is included at
-`.github/workflows/android-debug.yml`. It builds a debug APK on every push and
-attaches it as a downloadable artifact — no Android Studio or laptop needed:
+1. **QR camera scanning on the Verify screen** — the web `verify.html` only accepted a code
+   already embedded in the URL. The app adds a real camera-based QR scan (ZXing), so a
+   phone can scan a printed or on-screen card directly, in addition to manual code entry.
+2. **Encrypted local session storage** — replaces the web app's plain `sessionStorage` flag
+   with Android's `EncryptedSharedPreferences` (AES-256). This is a hardening improvement,
+   but see the security note below: it does **not** fix the underlying gap, because that gap
+   lives server-side.
+3. **Native PDF export and system Print dialog** for the membership card, instead of the
+   web version's browser print/PDF (`androidx.print` + `PdfDocument`).
+4. **Client-side search filter** on the dashboard, matching the web app's instant search
+   box behavior (name / member ID / mobile / email).
 
-1. Create a new GitHub repo (can be done from the GitHub mobile app or
-   website) and upload/push this whole `LibraryMembership/` folder to it.
-2. GitHub will automatically run the "Build debug APK" workflow (or trigger
-   it manually from the Actions tab → "Run workflow").
-3. When it finishes (a few minutes), open the workflow run → **Artifacts** →
-   download `library-membership-debug-apk` — that's a zip containing
-   `app-debug.apk`.
-4. On your phone, open the downloaded APK to install it (you'll need to
-   allow "install unknown apps" for your browser/files app the first time).
+## Security notes carried over from the review (unchanged risk — read before shipping)
 
-This is a **debug** build (unsigned, fine for personal/staff use, not for
-the Play Store).
+The live backend has no server-verified session token:
 
-## 3. Building the normal way (if you do have a computer)
+- `login.js` only returns `{success:true/false}` — it does not issue a token.
+- The Worker's member-data routes (`/api/members`, `/api/member`, `PATCH`, `DELETE`) have
+  no auth check at all.
+- This app's `SessionManager` is deliberately built the same shape as the web app's flag
+  (see the doc comment in `SessionManager.kt`) so nothing about the real access-control
+  posture is silently "fixed" or hidden by the rebuild — the app is exactly as protected,
+  and exactly as exposed, as the website is today.
 
-1. Open this folder (`LibraryMembership/`) as a project in Android Studio
-   (Koala or newer recommended).
-2. Let Gradle sync — it will download the Compose, Retrofit, CameraX, ML Kit,
-   ZXing, and Coil dependencies listed in `app/build.gradle.kts`.
-3. Run on a device or emulator (minSdk 24 / Android 7.0+).
-
-## 3. How it maps to your backend
-
-| App feature | Endpoint used |
-|---|---|
-| Member list | `GET /api/members` |
-| Member detail | `GET /api/member?memberId=` |
-| Register | `POST /api/register` |
-| Edit member | `PATCH /api/member` |
-| Activate/Deactivate | `PATCH /api/member-status` |
-| Delete | `DELETE /api/member?memberId=` |
-| Staff verify (scan/manual) | `GET /api/verify?verify=` |
-| Member card lookup | `GET /api/member-basic?memberId=` |
-| Photos | `GET /api/photo?memberId=&verify=` (or `?photoKey=`) |
-
-Note: editing a member on the backend **regenerates their verify code**
-(see `handleUpdateMember` in your Worker), which changes their QR code. The
-app reloads the member after saving so the new code/photo key are reflected.
-
-## 4. What's not included / known limitations
-
-- **Dropdown option lists are hardcoded to match the current live form**
-  (Membership Type: Student, General, Senior Citizen, Research Scholar,
-  Faculty · ID Proof Type: Aadhaar Card, Voter ID, PAN Card, Driving
-  License, Passport, Govt. ID · Duration: the three options on the form).
-  These come from `DEFAULT_MEMBERSHIP_TYPES` / `DEFAULT_ID_TYPES` inside
-  `register.html`, managed via the Worker's admin-key-gated
-  `/api/options` endpoint (which edits that file on GitHub directly). If
-  someone changes those lists on the web, this app's dropdowns will need
-  a matching edit in `RegisterScreen.kt` / `MemberDetailScreen.kt` —
-  there's no API to fetch them dynamically. The `/api/options` endpoint
-  itself isn't wired into the app since it's a rare, admin-key-gated
-  config action.
-- No offline caching/local database — every screen calls the API live.
-- No authentication in front of the Admin/Staff screens — anyone with the
-  app can register/edit/delete members and see all data, exactly like the
-  current wide-open CORS (`Access-Control-Allow-Origin: *`) setup on the
-  Worker. If this app will be used outside a trusted staff group, add an
-  admin login layer before shipping it.
-
-## 5. How verification actually works (confirmed from the Worker source)
-
-- On registration, the Worker generates a random 6-character
-  alphanumeric `verify` code and stores it in the NocoDB record alongside
-  the member.
-- The member's QR code (shown on their card) encodes just this 6-character
-  code — nothing else.
-- Staff scanning that QR calls `GET /api/verify?verify=CODE`, which looks
-  the member up by that code and returns their record (including current
-  Active/Inactive status).
-- **Editing a member's details regenerates their verify code** (and
-  therefore their QR code and photo key) — only toggling
-  Active/Inactive via `/api/member-status` leaves the code untouched.
-  The app reloads the member after any edit so the new code is reflected.
+Recommended fix (not yet implemented, by design — needs your decision on approach): have
+`functions/api/login.js` mint a signed, short-lived token on success, store it (e.g., in a
+`HttpOnly` cookie or returned to the app to send as `Authorization: Bearer …`), and add a
+check for that token to every member-data route in `worker.js`. The app's `ApiClient` and
+`MembershipApi` interface are structured so adding an auth header/interceptor later is a
+small, localized change — happy to draft that Worker + Functions patch and wire the app up
+to it as a follow-up.
 
 ## Project structure
 
 ```
-app/src/main/java/com/library/membership/
-  MainActivity.kt          # NavHost wiring all screens
-  api/
-    ApiClient.kt            # Retrofit setup + BASE_URL + photo URL helper
-    ApiService.kt           # Endpoint definitions
-    Models.kt                # Request/response data classes
-  ui/
-    RoleSelectScreen.kt
-    AdminListScreen.kt
-    MemberDetailScreen.kt
-    RegisterScreen.kt
-    VerifyScreen.kt
-    MemberCardScreen.kt
-    theme/Theme.kt
-  util/
-    QrUtil.kt                # Generates QR bitmaps (ZXing)
-    QrScannerView.kt         # CameraX + ML Kit live scanner
+LibraryMembership/
+LibraryMembershipApp/
+├── app/
+│   ├── build.gradle.kts          # Worker + Pages base URLs as BuildConfig fields
+│   └── src/main/
+│       ├── AndroidManifest.xml
+│       ├── java/com/libraryofmiao/membership/
+│       │   ├── MainActivity.kt
+│       │   ├── data/
+│       │   │   ├── model/Member.kt          # exact field set from worker.js
+│       │   │   ├── network/MembershipApi.kt # every confirmed Worker route
+│       │   │   ├── network/ApiClient.kt
+│       │   │   └── session/SessionManager.kt
+│       │   ├── nav/                          # routes + NavHost
+│       │   └── ui/
+│       │       ├── login/  home/  dashboard/  register/  membercard/  verify/
+│       │       └── theme/                    # colors pulled from login.html/dashboard.html CSS
+│       └── res/values/{strings,colors,themes}.xml
+├── build.gradle.kts
+├── settings.gradle.kts
+└── gradle.properties
 ```
+
+## Building
+
+1. Open the `LibraryMembership/` folder in Android Studio (Koala or newer).
+2. Let Gradle sync (it will fetch Compose BOM, Retrofit, Coil, ZXing, etc. — no manual setup needed).
+3. Run on a device/emulator with API 24+.
+
+No API keys are hardcoded except the public base URLs — the Options-Admin-Key is entered
+by the admin at runtime in the "Manage Options" sheet and stored encrypted locally, matching
+how the web app expects it to be supplied per-session rather than baked into the client.
+
+## Suggested next steps (optional — say the word and I'll build these too)
+
+- Wire up the real auth-token fix described above (Worker + Pages Function + app interceptor).
+- Add pull-to-refresh on the dashboard.
+- Add a Room-backed offline cache for the member list.
+- Push notifications for membership expiry reminders (would need a new Worker cron + FCM wiring).
+- Biometric unlock (fingerprint/face) layered on top of the PIN for a faster admin re-entry.

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Login screen dark theme (from login.html: #020617 bg, blue-400/600 accents) -->
+    <color name="login_bg">#020617</color>
+    <color name="login_card_bg">#0F172A</color>
+    <color name="login_border">#334155</color>
+    <color name="accent_blue">#2563EB</color>
+    <color name="accent_blue_light">#3B82F6</color>
+    <color name="text_light">#E2E8F0</color>
+    <color name="text_muted">#94A3B8</color>
+    <color name="error_red">#F87171</color>
+
+    <!-- Dashboard / forms light theme (from dashboard.html bootstrap look) -->
+    <color name="surface_light">#F5F5F5</color>
+    <color name="card_white">#FFFFFF</color>
+    <color name="status_active_bg">#D1E7DD</color>
+    <color name="status_active_text">#0F5132</color>
+    <color name="status_inactive_bg">#F8D7DA</color>
+    <color name="status_inactive_text">#842029</color>
+    <color name="btn_success">#198754</color>
+    <color name="btn_warning">#FFC107</color>
+    <color name="btn_danger">#DC3545</color>
+    <color name="text_dark">#1A1A1A</color>
+</resources>

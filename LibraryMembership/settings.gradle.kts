@@ -10,8 +10,9 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven { url = uri("https://jitpack.io") } // for zxing QR generation
     }
 }
 
-rootProject.name = "LibraryMembership"
+rootProject.name = "Library Membership System"
 include(":app")
